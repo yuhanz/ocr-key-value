@@ -12,9 +12,11 @@ WORD_INDEX = -1
 LEFT_INDEX = -6
 WIDTH_INDEX = -4
 
-def processingOneLineOfWords(words, joinThreshold = 5):
+def processingOneLineOfWords(words, joinThreshold = 10):
     wordDistanceArr = map(lambda p: p[1][LEFT_INDEX] - (p[0][LEFT_INDEX] + p[0][WIDTH_INDEX]), zip(words, words[1:]))
-    shouldSplit = list((np.array(wordDistanceArr) > joinThreshold) + 0)
+    shouldSplitBecauseOfText = np.array(map(lambda w: w[WORD_INDEX][0] == '|', words[1:]))
+    shouldSplitBecauseOfDistance = np.array(wordDistanceArr) > joinThreshold
+    shouldSplit = list((shouldSplitBecauseOfText + shouldSplitBecauseOfDistance)>0 +0)
     phraseIds = reduce(lambda s,x: s + [x+s[-1]] , shouldSplit, [0])
     # print(phraseIds)
     wordGroups = [map(lambda p: p[0], it) for k, it in groupby(zip(words, phraseIds), lambda p: p[1])]
@@ -29,12 +31,13 @@ def extract_data(img_file_path):
     arrays = map(lambda s: s.split('\t'), data.split('\n'))[1:]
     words = map(lambda arr: arr[0:6] + map(lambda i: int(i), arr[6:-1]) + [arr[-1]], arrays)
     words = filter(lambda arr: arr[CONF_INDEX] >0 and arr[WORD_INDEX], words)
-    #lines = [' '.join(map(lambda arr: arr[-1], it)) for k, it in groupby(words, lambda arr: ','.join(arr[0:5]))]
     lines = [processingOneLineOfWords(map(lambda x: x, it)) for k, it in groupby(words, lambda arr: ','.join(arr[0:5]))]
     return [lines]
 
-[lines] = extract_data('/tmp/1.png')
+#[lines] = extract_data('/tmp/1.png')
+#[lines] = extract_data('/tmp/R85K-EwL-L5FOBhgHJuTyw.png')
+[lines] = extract_data('/tmp/E6Wty2FyTTLXg55IR5jOlQ.png')
 
-# print(data)
+print(lines)
 keyValues = dict(map(lambda line: [line[0][WORD_INDEX], line[1][WORD_INDEX] if len(line) >= 2 else ''], lines))
-print(keyValues)
+#print(keyValues)
