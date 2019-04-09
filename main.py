@@ -2,7 +2,9 @@ import pytesseract
 from PIL import Image
 from itertools import groupby
 import numpy as np
+from spacy.lang.en import English
 
+nlp = English()
 
 # schema = [u'level', u'page_num', u'block_num', u'par_num', u'line_num', u'word_num', u'left', u'top', u'width', u'height', u'conf', u'text']
 
@@ -23,8 +25,6 @@ def processingOneLineOfWords(words, joinThreshold = 10):
 
     return map(lambda arr: arr[0][0:WORD_INDEX] + [' '.join(map(lambda w: w[WORD_INDEX], arr))], wordGroups)
 
-
-
 def extract_data(img_file_path):
     data = pytesseract.image_to_data(Image.open(img_file_path))
     # print(data)
@@ -34,10 +34,14 @@ def extract_data(img_file_path):
     lines = [processingOneLineOfWords(map(lambda x: x, it)) for k, it in groupby(words, lambda arr: ','.join(arr[0:5]))]
     return [lines]
 
+def extract_key_values_from_line(line):
+    hasNumbers = map(lambda phrase: reduce(lambda s,t: s+t.like_num, nlp(phrase[WORD_INDEX]), 0), line)
+    return filter(lambda v: v, [[line[i-1][WORD_INDEX], line[i][WORD_INDEX]] if v > 0 and not hasNumbers[i-1] else None for i, v in enumerate(hasNumbers)])
+
 #[lines] = extract_data('/tmp/1.png')
 #[lines] = extract_data('/tmp/R85K-EwL-L5FOBhgHJuTyw.png')
 [lines] = extract_data('/tmp/E6Wty2FyTTLXg55IR5jOlQ.png')
 
-print(lines)
-keyValues = dict(map(lambda line: [line[0][WORD_INDEX], line[1][WORD_INDEX] if len(line) >= 2 else ''], lines))
-#print(keyValues)
+pairs = filter(lambda l: len(l)>0, map(extract_key_values_from_line, lines))
+for p in pairs:
+    print(p)
